@@ -37,7 +37,7 @@ pub mod __private {
     #[cfg(feature = "serde")]
     pub use crate::with_serde::{WithSerdeDecoder, WithSerdeEncoder};
 
-    pub use crate::with_bytes::{AsBytes, FromBytes, WithBytesDecoder, WithBytesEncoder};
+    pub use crate::with_bytes::{WithBytesDecoder, WithBytesEncoder};
 }
 
 /// A type which can be encoded to bytes with [`encode`].

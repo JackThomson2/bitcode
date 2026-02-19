@@ -81,9 +81,6 @@ pub trait Derive<const ITEM_COUNT: usize> {
     /// Bound for `#[bitcode(with_serde)]` fields, e.g. `serde::Serialize` or `serde::de::DeserializeOwned`.
     fn with_serde_bound(&self) -> Path;
 
-    /// Bound for `#[bitcode(with_bytes)]` fields.
-    fn with_bytes_bound(&self, crate_name: &Path) -> Path;
-
     /// Generates the derive implementation.
     fn derive_impl(
         &self,
@@ -110,7 +107,7 @@ pub trait Derive<const ITEM_COUNT: usize> {
                 } else if field_attrs.with_serde {
                     Some(self.with_serde_bound())
                 } else if field_attrs.with_bytes {
-                    Some(self.with_bytes_bound(crate_name))
+                    None // Copy bound comes from Encoder/Decoder impls
                 } else {
                     Some(self.bound(crate_name))
                 };

@@ -35,7 +35,6 @@ mod u8_char;
 pub use crate::buffer::Buffer;
 pub use crate::derive::*;
 pub use crate::error::Error;
-pub use crate::with_bytes::{AsBytes, FromBytes};
 
 #[cfg(feature = "derive")]
 pub use bitcode_derive::{Decode, Encode};
