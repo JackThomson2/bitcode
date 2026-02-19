@@ -106,6 +106,8 @@ pub trait Derive<const ITEM_COUNT: usize> {
                     self.skip_bound()
                 } else if field_attrs.with_serde {
                     Some(self.with_serde_bound())
+                } else if field_attrs.with_bytes {
+                    None // No trait bound needed — user asserts POD safety via attribute
                 } else {
                     Some(self.bound(crate_name))
                 };

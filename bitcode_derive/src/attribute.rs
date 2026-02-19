@@ -10,6 +10,7 @@ enum BitcodeAttr {
     CrateAlias(Path),
     Skip,
     WithSerde,
+    WithBytes,
 }
 
 impl BitcodeAttr {
@@ -56,6 +57,7 @@ impl BitcodeAttr {
             },
             "skip" => Ok(Self::Skip),
             "with_serde" => Ok(Self::WithSerde),
+            "with_bytes" => Ok(Self::WithBytes),
             _ => err(&nested, "unknown attribute"),
         }
     }
@@ -97,6 +99,14 @@ impl BitcodeAttr {
                     err(nested, "can only apply with_serde to fields")
                 }
             }
+            Self::WithBytes => {
+                if let AttrType::Field { .. } = &attrs.attr_type {
+                    attrs.with_bytes = true;
+                    Ok(())
+                } else {
+                    err(nested, "can only apply with_bytes to fields")
+                }
+            }
         }
     }
 }
@@ -110,6 +120,8 @@ pub struct BitcodeAttrs {
     pub skip: bool,
     /// Whether to use serde Serialize/Deserialize instead of bitcode Encode/Decode.
     pub with_serde: bool,
+    /// Whether to encode/decode as raw bytes (for POD/Copy types).
+    pub with_bytes: bool,
 }
 
 #[derive(Clone)]
@@ -126,6 +138,7 @@ impl BitcodeAttrs {
             crate_name: syn::parse_str("bitcode").expect("invalid crate name"),
             skip: false,
             with_serde: false,
+            with_bytes: false,
         }
     }
 

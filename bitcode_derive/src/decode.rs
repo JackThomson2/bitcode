@@ -53,6 +53,11 @@ impl crate::shared::Item for Item {
                         #global_field_name: #private::WithSerdeDecoder<#de, #de_type>,
                     };
                 }
+                if field_attrs.with_bytes {
+                    return quote! {
+                        #global_field_name: #private::WithBytesDecoder<#de, #de_type>,
+                    };
+                }
                 if field_attrs.skip {
                     de_type = quote! { ::core::marker::PhantomData<#de_type> };
                 }

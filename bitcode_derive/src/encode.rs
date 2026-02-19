@@ -44,6 +44,11 @@ impl crate::shared::Item for Item {
                         #global_field_name: #private::WithSerdeEncoder<#static_type>,
                     };
                 }
+                if field_attrs.with_bytes {
+                    return quote! {
+                        #global_field_name: #private::WithBytesEncoder<#static_type>,
+                    };
+                }
                 if field_attrs.skip {
                     static_type = quote! { ::core::marker::PhantomData<#static_type> };
                 }
