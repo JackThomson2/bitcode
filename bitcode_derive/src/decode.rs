@@ -46,11 +46,16 @@ impl crate::shared::Item for Item {
         match self {
             Self::Type => {
                 let mut de_type = replace_lifetimes(field_type, DE_LIFETIME).to_token_stream();
+                let private = private(crate_name);
+                let de = de_lifetime();
+                if field_attrs.with_serde {
+                    return quote! {
+                        #global_field_name: #private::WithSerdeDecoder<#de, #de_type>,
+                    };
+                }
                 if field_attrs.skip {
                     de_type = quote! { ::core::marker::PhantomData<#de_type> };
                 }
-                let private = private(crate_name);
-                let de = de_lifetime();
                 quote! {
                     #global_field_name: <#de_type as #private::Decode<#de>>::Decoder,
                 }
@@ -255,6 +260,10 @@ impl crate::shared::Derive<{ Item::COUNT }> for Decode {
 
     fn skip_bound(&self) -> Option<Path> {
         Some(parse_quote!(Default))
+    }
+
+    fn with_serde_bound(&self) -> Path {
+        parse_quote!(::serde::de::DeserializeOwned)
     }
 
     fn derive_impl(

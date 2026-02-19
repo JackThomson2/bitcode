@@ -44,6 +44,9 @@ mod serde;
 #[cfg(feature = "serde")]
 pub use crate::serde::*;
 
+#[cfg(feature = "serde")]
+mod with_serde;
+
 #[cfg(test)]
 mod benches;
 #[cfg(test)]

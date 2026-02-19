@@ -78,6 +78,9 @@ pub trait Derive<const ITEM_COUNT: usize> {
     /// Bound for skipped fields, e.g. `Default`
     fn skip_bound(&self) -> Option<Path>;
 
+    /// Bound for `#[bitcode(with_serde)]` fields, e.g. `serde::Serialize` or `serde::de::DeserializeOwned`.
+    fn with_serde_bound(&self) -> Path;
+
     /// Generates the derive implementation.
     fn derive_impl(
         &self,
@@ -101,6 +104,8 @@ pub trait Derive<const ITEM_COUNT: usize> {
                 let field_attrs = BitcodeAttrs::parse_field(&field.attrs, attrs)?;
                 let bound = if field_attrs.skip {
                     self.skip_bound()
+                } else if field_attrs.with_serde {
+                    Some(self.with_serde_bound())
                 } else {
                     Some(self.bound(crate_name))
                 };

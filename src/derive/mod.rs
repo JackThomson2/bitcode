@@ -33,6 +33,9 @@ pub mod __private {
         crate::error::err("invalid enum variant")
     }
     pub use alloc::vec::Vec;
+
+    #[cfg(feature = "serde")]
+    pub use crate::with_serde::{WithSerdeDecoder, WithSerdeEncoder};
 }
 
 /// A type which can be encoded to bytes with [`encode`].

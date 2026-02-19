@@ -9,6 +9,7 @@ enum BitcodeAttr {
     BoundType(Type),
     CrateAlias(Path),
     Skip,
+    WithSerde,
 }
 
 impl BitcodeAttr {
@@ -54,6 +55,7 @@ impl BitcodeAttr {
                 _ => err(&nested, "expected name value"),
             },
             "skip" => Ok(Self::Skip),
+            "with_serde" => Ok(Self::WithSerde),
             _ => err(&nested, "unknown attribute"),
         }
     }
@@ -87,6 +89,14 @@ impl BitcodeAttr {
                     err(nested, "can only apply skip to fields")
                 }
             }
+            Self::WithSerde => {
+                if let AttrType::Field { .. } = &attrs.attr_type {
+                    attrs.with_serde = true;
+                    Ok(())
+                } else {
+                    err(nested, "can only apply with_serde to fields")
+                }
+            }
         }
     }
 }
@@ -98,6 +108,8 @@ pub struct BitcodeAttrs {
     pub crate_name: Path,
     /// Whether to skip this field during (de)serialisation.
     pub skip: bool,
+    /// Whether to use serde Serialize/Deserialize instead of bitcode Encode/Decode.
+    pub with_serde: bool,
 }
 
 #[derive(Clone)]
@@ -113,6 +125,7 @@ impl BitcodeAttrs {
             attr_type,
             crate_name: syn::parse_str("bitcode").expect("invalid crate name"),
             skip: false,
+            with_serde: false,
         }
     }
 

@@ -38,10 +38,15 @@ impl crate::shared::Item for Item {
         match self {
             Self::Type => {
                 let mut static_type = replace_lifetimes(field_type, "static").to_token_stream();
+                let private = private(crate_name);
+                if field_attrs.with_serde {
+                    return quote! {
+                        #global_field_name: #private::WithSerdeEncoder<#static_type>,
+                    };
+                }
                 if field_attrs.skip {
                     static_type = quote! { ::core::marker::PhantomData<#static_type> };
                 }
-                let private = private(crate_name);
                 quote! {
                     #global_field_name: <#static_type as #private::Encode>::Encoder,
                 }
@@ -245,6 +250,10 @@ impl crate::shared::Derive<{ Item::COUNT }> for Encode {
 
     fn skip_bound(&self) -> Option<Path> {
         None
+    }
+
+    fn with_serde_bound(&self) -> Path {
+        parse_quote!(::serde::Serialize)
     }
 
     fn derive_impl(
