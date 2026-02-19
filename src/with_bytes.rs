@@ -4,11 +4,31 @@ use alloc::vec::Vec;
 use core::marker::PhantomData;
 use core::num::NonZeroUsize;
 
-/// Encoder for POD types — writes raw bytes via memcpy. No serde, no framing.
+/// Trait for types that can be safely read as raw bytes.
 ///
 /// # Safety
-/// The user asserts via `#[bitcode(with_bytes)]` that `T` is a plain-old-data type
-/// safe to transmit as raw bytes (no padding-dependent invariants, repr(C), etc.).
+/// The type must have a fixed layout with no padding-dependent invariants.
+/// All bit patterns within the byte representation must be valid.
+pub unsafe trait AsBytes {
+    fn as_bytes(&self) -> &[u8] {
+        unsafe {
+            core::slice::from_raw_parts(self as *const Self as *const u8, core::mem::size_of_val(self))
+        }
+    }
+}
+
+/// Trait for types that can be safely constructed from raw bytes.
+///
+/// # Safety
+/// The type must accept any bit pattern of the correct length as valid.
+pub unsafe trait FromBytes: Sized {
+    fn from_bytes(bytes: &[u8]) -> Self {
+        assert!(bytes.len() >= core::mem::size_of::<Self>());
+        unsafe { core::ptr::read(bytes.as_ptr() as *const Self) }
+    }
+}
+
+/// Encoder for POD types — writes raw bytes. No serde, no framing overhead.
 pub struct WithBytesEncoder<T> {
     data: Vec<u8>,
     _phantom: PhantomData<fn(T)>,
@@ -23,13 +43,10 @@ impl<T> Default for WithBytesEncoder<T> {
     }
 }
 
-impl<T: Copy> Encoder<T> for WithBytesEncoder<T> {
+impl<T: AsBytes> Encoder<T> for WithBytesEncoder<T> {
     #[inline(always)]
     fn encode(&mut self, t: &T) {
-        let bytes = unsafe {
-            core::slice::from_raw_parts(t as *const T as *const u8, core::mem::size_of::<T>())
-        };
-        self.data.extend_from_slice(bytes);
+        self.data.extend_from_slice(t.as_bytes());
     }
 }
 
@@ -44,7 +61,7 @@ impl<T> Buffer for WithBytesEncoder<T> {
     }
 }
 
-/// Decoder for POD types — reads raw bytes via memcpy. Zero-copy from input.
+/// Decoder for POD types — zero-copy read from input buffer.
 pub struct WithBytesDecoder<'a, T> {
     data: &'a [u8],
     _phantom: PhantomData<fn() -> T>,
@@ -69,24 +86,29 @@ impl<'a, T> View<'a> for WithBytesDecoder<'a, T> {
     }
 }
 
-impl<'a, T: Copy> Decoder<'a, T> for WithBytesDecoder<'a, T> {
+impl<'a, T: FromBytes> Decoder<'a, T> for WithBytesDecoder<'a, T> {
     #[inline(always)]
     fn decode(&mut self) -> T {
         let size = core::mem::size_of::<T>();
-        debug_assert!(self.data.len() >= size);
         let (bytes, rest) = self.data.split_at(size);
         self.data = rest;
-        unsafe { core::ptr::read(bytes.as_ptr() as *const T) }
+        T::from_bytes(bytes)
     }
 }
 
+// Blanket impl for bytemuck types
+unsafe impl<T: bytemuck::NoUninit> AsBytes for T {}
+unsafe impl<T: bytemuck::AnyBitPattern> FromBytes for T {}
+
 #[cfg(test)]
 mod tests {
-    #[derive(Copy, Clone, Debug, Default, PartialEq)]
+    use super::*;
+
+    #[derive(Copy, Clone, Debug, Default, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
     #[repr(C)]
     struct PodType {
         a: u32,
-        b: u64,
+        b: u32,
         c: [u8; 16],
     }
 

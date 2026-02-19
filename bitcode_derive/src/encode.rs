@@ -261,6 +261,11 @@ impl crate::shared::Derive<{ Item::COUNT }> for Encode {
         parse_quote!(::serde::Serialize)
     }
 
+    fn with_bytes_bound(&self, crate_name: &Path) -> Path {
+        let private = private(crate_name);
+        parse_quote!(#private::AsBytes)
+    }
+
     fn derive_impl(
         &self,
         crate_name: &Path,

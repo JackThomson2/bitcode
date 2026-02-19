@@ -17,7 +17,7 @@ exclude = ["fuzz/"]
 [dependencies]
 arrayvec = { version = "0.7", default-features = false, optional = true }
 bitcode_derive = { version = "=0.6.9", path = "./bitcode_derive", optional = true }
-bytemuck = { version = "1.14", features = [ "min_const_generics", "must_cast" ] }
+bytemuck = { version = "1.14", features = [ "min_const_generics", "must_cast", "derive" ] }
 glam = { version = ">=0.21", default-features = false, optional = true }
 rust_decimal = { version = "1.36", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, features = [ "alloc" ], optional = true }
